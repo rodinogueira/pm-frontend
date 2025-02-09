@@ -10,7 +10,7 @@ const AuthProvider = ({children}) => {
     const [isLogged, setIsLogged] = useState(false)
     const [loading, setLoading] = useState(true)
     const [userFull, setUserFull] = useState({})
-    console.log(userFull, 'userFull')
+
     useEffect(() => {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       if (userInfo) {

@@ -3,8 +3,8 @@ import Product from '../Product'
 import { findAll } from '../../api/productService';
 
 const ProductList = () => {
-  const [categorias] = useState(['B', 'U', 'D'])
-  const [categoriaAtiva, setCategoriaAtiva] = useState('U');
+  const [categorias] = useState(['Home', 'Admin', 'Support'])
+  const [categoriaAtiva, setCategoriaAtiva] = useState('Home');
   const [products, setProducts] = useState([])
 
   useEffect(() => {

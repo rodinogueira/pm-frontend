@@ -10,14 +10,12 @@ const Cart = () => {
   const navigate = useNavigate();
   const { userFull } = useContext(AuthContext);
   const carrinhoId = localStorage.getItem("carrinhoId");
-
   const [address, setAddress] = useState({
     rua: "",
     numero: "",
     complemento: "",
     cep: "",
   });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [cart, setCart] = useState({ produtos: [], frete: 0, precoTotal: 0 });
@@ -68,24 +66,28 @@ const Cart = () => {
     if (!cart?.produtos?.length) return setError("Carrinho está vazio!");
 
     setLoading(true);
-    const productsOrder = cart.produtos.map((product) => ({
-      _id: product._id,
-      quantidade: product.quantidade,
-    }));
 
     const cartInfo = {
-      produtos: productsOrder,
+      produtos: cart.produtos.map((product) => ({
+        _id: product._id,
+        quantidade: product.quantidade,
+      })),
       frete: cart.frete,
       precoTotal: cart.precoTotal,
       userId: userFull?._id,
       concluido: true,
+      userEmail: userFull?.email,
+      address: address,
     };
 
     try {
       const responseOrder = await addOrder(cartInfo);
+      console.log(responseOrder.data._id, 'Cart responseOrder._id');
+
       if (responseOrder.data) {
+        // Você precisa substituir localStorage pela api /carrinho
         localStorage.removeItem("productCart");
-        navigate("/complete");
+        navigate("/complete", { state: { orderId: responseOrder.data._id } });
       }
     } catch (error) {
       setError("Erro ao enviar o pedido. Por favor, tente novamente.");
@@ -98,28 +100,28 @@ const Cart = () => {
     <main className="h-screen banner">
       <div className="max-w-screen-xl py-20 mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-{/* Formulário de Endereço */}
-<div className="bg-gray-900 p-6 rounded-lg shadow-lg">
-  <h2 className="text-2xl text-white font-semibold border-b-2 border-gray-500 pb-4">
-    Adicione seu endereço
-  </h2>
-  <form className="mt-6">
-    <div className="flex flex-col space-y-4">
-      {["cep", "rua", "numero", "complemento"].map((field) => (
-        <input
-          key={field}
-          className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-300 ease-in-out transform hover:scale-105"
-          type="text"
-          name={field}
-          placeholder={`${field.charAt(0).toUpperCase() + field.slice(1)}:`}
-          value={address[field]}
-          onChange={handleChange}
-          onFocus={field === "rua" ? findAddress : undefined}
-        />
-      ))}
-    </div>
-  </form>
-</div>
+        {/* Formulário de Endereço */}
+        <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
+          <h2 className="text-2xl text-white font-semibold border-b-2 border-gray-500 pb-4">
+            Adicione seu endereço
+          </h2>
+          <form className="mt-6">
+            <div className="flex flex-col space-y-4">
+              {["cep", "rua", "numero", "complemento"].map((field) => (
+                <input
+                  key={field}
+                  className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-300 ease-in-out transform hover:scale-105"
+                  type="text"
+                  name={field}
+                  placeholder={`${field.charAt(0).toUpperCase() + field.slice(1)}:`}
+                  value={address[field]}
+                  onChange={handleChange}
+                  onFocus={field === "rua" ? findAddress : undefined}
+                />
+              ))}
+            </div>
+          </form>
+        </div>
 
 
           {/* Carrinho */}
