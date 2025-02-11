@@ -3,10 +3,12 @@ import {findAllCategories} from '../../api/categoryService'
 import {addProduct} from '../../api/productService'
 import { MultiSelect } from 'react-multi-select-component'
 import { AuthContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const AddProduct = () => {
   const { userFull } = useContext(AuthContext);
-  console.log(userFull._id, 'userFulluserFull')
+  const navigate = useNavigate();
+  
   const [productForm, setProductForm] = useState({
     nome: '',
     descricao: '',
@@ -76,6 +78,7 @@ const AddProduct = () => {
   const createProduct = async(product) => {
     try {
       await addProduct(product)
+      navigate('/admin')
     } catch (error) {
       // Handle network errors or other unexpected issues
       console.error('Network Error:', error);

@@ -25,6 +25,8 @@ const ProductInfo = () => {
 
   if (!product) return <div className="text-center text-lg font-semibold mt-10">Carregando...</div>;
 
+  const totalPrice = (product.precoUnitario * quantity).toFixed(2);
+
   return (
     <div className="max-w-screen-lg mx-auto px-6 my-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -42,7 +44,7 @@ const ProductInfo = () => {
           <h1 className="text-4xl font-bold text-gray-800">{product.nome}</h1>
           <p className="text-gray-600 text-lg mt-4">{product.descricao}</p>
           
-          <h2 className="text-3xl font-bold text-blue-600 mt-6">R$ {product.precoUnitario}</h2>
+          <h2 className="text-3xl font-bold text-blue-600 mt-6">R$ {totalPrice}</h2>
           
           <div className="flex items-center mt-6 space-x-4">
             {/* Controle de Quantidade */}

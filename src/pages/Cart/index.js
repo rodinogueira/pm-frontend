@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
-import { AiOutlineDelete } from "react-icons/ai";
+import {
+  AiOutlineDelete,
+  AiOutlineMinusCircle,
+  AiOutlinePlusCircle,
+} from "react-icons/ai";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { findCartById } from "../../api/cartService";
+import {
+  findCartById,
+  updateCart,
+  removeProductFromCart,
+} from "../../api/cartService";
+import { findProductById } from "../../api/productService";
 import { addOrder } from "../../api/orderService";
 
 const Cart = () => {
@@ -22,14 +31,28 @@ const Cart = () => {
 
   useEffect(() => {
     if (carrinhoId) {
-      fetchCart(carrinhoId).catch((err) => setError(err.message));
+      fetchCart(carrinhoId);
     }
   }, [carrinhoId]);
 
   const fetchCart = async (cartId) => {
     try {
       const response = await findCartById(cartId);
-      setCart(response.data || { produtos: [], frete: 0, precoTotal: 0 });
+      const cartData = response.data || {
+        produtos: [],
+        frete: 0,
+        precoTotal: 0,
+      };
+
+      // Buscar detalhes dos produtos
+      const produtosComDetalhes = await Promise.all(
+        cartData.produtos.map(async (produto) => {
+          const productDetails = await findProductById(produto._id);
+          return { ...produto, ...productDetails.data };
+        })
+      );
+
+      setCart({ ...cartData, produtos: produtosComDetalhes });
     } catch (error) {
       setError("Erro ao buscar o carrinho. Por favor, tente novamente.");
     }
@@ -40,25 +63,40 @@ const Cart = () => {
     setAddress((prev) => ({ ...prev, [name]: value }));
   };
 
-  const remove = (id) => {
-    const storageCart = JSON.parse(localStorage.getItem("productCart")) || [];
-    const filteredCart = storageCart.filter((product) => product._id !== id);
-    localStorage.setItem("productCart", JSON.stringify(filteredCart));
+  const updateQuantity = async (id, delta) => {
+    const updatedProducts = cart.produtos.map((product) =>
+      product._id === id
+        ? { ...product, quantidade: Math.max(1, product.quantidade + delta) }
+        : product
+    );
+
+    let updatedTotal = cart.frete || 0;
+    updatedProducts.forEach((product) => {
+      updatedTotal += product.precoUnitario * product.quantidade;
+    });
+
+    setCart((prevCart) => ({
+      ...prevCart,
+      produtos: updatedProducts,
+      precoTotal: updatedTotal || 0,
+    }));
+
+    try {
+      await updateCart(cart._id, {
+        produtos: updatedProducts,
+        precoTotal: updatedTotal,
+      });
+    } catch (error) {
+      setError("Erro ao atualizar a quantidade.");
+    }
   };
 
-  const findAddress = async () => {
-    if (address.cep.length === 8) {
-      try {
-        const response = await axios.get(
-          `https://viacep.com.br/ws/${address.cep}/json`
-        );
-        setAddress({
-          ...address,
-          rua: `${response.data.logradouro}, ${response.data.bairro}, ${response.data.localidade}`,
-        });
-      } catch (error) {
-        setError("Erro ao buscar o CEP. Verifique e tente novamente.");
-      }
+  const remove = async (id) => {
+    try {
+      await removeProductFromCart(cart._id, id);
+      fetchCart(cart._id);
+    } catch (error) {
+      setError("Erro ao remover o produto.");
     }
   };
 
@@ -82,15 +120,13 @@ const Cart = () => {
 
     try {
       const responseOrder = await addOrder(cartInfo);
-      console.log(responseOrder.data._id, 'Cart responseOrder._id');
 
       if (responseOrder.data) {
-        // Você precisa substituir localStorage pela api /carrinho
         localStorage.removeItem("productCart");
         navigate("/complete", { state: { orderId: responseOrder.data._id } });
       }
     } catch (error) {
-      setError("Erro ao enviar o pedido. Por favor, tente novamente.");
+      setError("Erro ao enviar o pedido.");
     } finally {
       setLoading(false);
     }
@@ -100,49 +136,82 @@ const Cart = () => {
     <main className="h-screen banner">
       <div className="max-w-screen-xl py-20 mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        {/* Formulário de Endereço */}
-        <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl text-white font-semibold border-b-2 border-gray-500 pb-4">
-            Adicione seu endereço
-          </h2>
-          <form className="mt-6">
-            <div className="flex flex-col space-y-4">
-              {["cep", "rua", "numero", "complemento"].map((field) => (
-                <input
-                  key={field}
-                  className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-300 ease-in-out transform hover:scale-105"
-                  type="text"
-                  name={field}
-                  placeholder={`${field.charAt(0).toUpperCase() + field.slice(1)}:`}
-                  value={address[field]}
-                  onChange={handleChange}
-                  onFocus={field === "rua" ? findAddress : undefined}
-                />
-              ))}
-            </div>
-          </form>
-        </div>
-
+          {/* Formulário de Endereço */}
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
+            <h2 className="text-2xl text-white font-semibold border-b-2 border-gray-500 pb-4">
+              Adicione seu endereço
+            </h2>
+            <form className="mt-6">
+              <div className="flex flex-col space-y-4">
+                {["cep", "rua", "numero", "complemento"].map((field) => (
+                  <input
+                    key={field}
+                    className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    type="text"
+                    name={field}
+                    placeholder={`${
+                      field.charAt(0).toUpperCase() + field.slice(1)
+                    }:`}
+                    value={address[field]}
+                    onChange={handleChange}
+                  />
+                ))}
+              </div>
+            </form>
+          </div>
 
           {/* Carrinho */}
           <div className="space-y-4">
             {!cart?.produtos?.length ? (
-              <p className="text-gray-400 text-center">Seu carrinho está vazio.</p>
+              <p className="text-gray-400 text-center">
+                Seu carrinho está vazio.
+              </p>
             ) : (
               <div className="space-y-3">
                 {cart.produtos.map((product) => (
                   <div
                     key={product._id}
-                    className="bg-gray-900 border border-green-500 rounded-xl p-4 flex justify-between items-center"
+                    className="bg-gray-900 border border-green-500 rounded-xl p-4 flex items-center justify-between"
                   >
-                    <div className="flex items-center space-x-4">
+                    {/* Imagem do Produto */}
+                    <img
+                      src={product.imagem || "https://via.placeholder.com/150"}
+                      alt={product.nome}
+                      className="w-20 h-20 object-cover rounded-md"
+                    />
+
+                    {/* Nome e Preço */}
+                    <div className="flex-1 ml-4">
                       <span className="text-lg text-gray-300 font-semibold">
-                        {product.quantidade} un
+                        {product.nome}
                       </span>
+                      <div className="text-gray-400 text-sm">
+                        ${product.precoUnitario} x {product.quantidade} ={" "}
+                        <span className="font-semibold text-white">
+                          ${product.precoUnitario * product.quantidade}
+                        </span>
+                      </div>
                     </div>
+
+                    {/* Controles de Quantidade */}
+                    <div className="flex items-center space-x-3">
+                      <AiOutlineMinusCircle
+                        onClick={() => updateQuantity(product._id, -1)}
+                        className="w-6 h-6 text-gray-400 cursor-pointer hover:text-white"
+                      />
+                      <span className="text-lg font-medium text-white">
+                        {product.quantidade}
+                      </span>
+                      <AiOutlinePlusCircle
+                        onClick={() => updateQuantity(product._id, 1)}
+                        className="w-6 h-6 text-gray-400 cursor-pointer hover:text-white"
+                      />
+                    </div>
+
+                    {/* Botão de Remover */}
                     <AiOutlineDelete
                       onClick={() => remove(product._id)}
-                      className="w-6 h-6 text-red-500 cursor-pointer transition-transform duration-300 hover:scale-110"
+                      className="w-6 h-6 text-red-500 cursor-pointer transition-transform hover:scale-110 ml-4"
                     />
                   </div>
                 ))}
@@ -157,7 +226,9 @@ const Cart = () => {
               </div>
               <div className="flex justify-between items-center text-gray-400">
                 <span>Total + Taxa</span>
-                <span className="font-semibold text-lg text-white">${cart.precoTotal}</span>
+                <span className="font-semibold text-lg text-white">
+                  ${cart.precoTotal}
+                </span>
               </div>
             </div>
 
@@ -170,15 +241,13 @@ const Cart = () => {
               ) : (
                 <button
                   onClick={sendOrder}
-                  className="w-full px-6 py-3 rounded-lg bg-green-600 text-white font-semibold transition duration-300 hover:bg-green-700 focus:ring-4 focus:ring-green-400"
+                  className="w-full px-6 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700"
                 >
-                  Enviar Pedido
+                  Finalizar Pedido
                 </button>
               )}
-              {error && <p className="text-red-500 mt-3 text-center">{error}</p>}
             </div>
           </div>
-
         </div>
       </div>
     </main>
