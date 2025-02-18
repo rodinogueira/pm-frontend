@@ -6,6 +6,7 @@ import {
 } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import axios from 'axios';
 import {
   findCartById,
   updateCart,
@@ -56,7 +57,11 @@ const Cart = () => {
         return total + product.precoUnitario * product.quantidade;
       }, cartData.frete);
 
-      setCart({ ...cartData, produtos: produtosComDetalhes, precoTotal: updatedTotal });
+      setCart({
+        ...cartData,
+        produtos: produtosComDetalhes,
+        precoTotal: updatedTotal,
+      });
     } catch (error) {
       setError("Erro ao buscar o carrinho. Por favor, tente novamente.");
     }
@@ -138,6 +143,25 @@ const Cart = () => {
     }
   };
 
+  const findAddress = async () => {
+    if (address.cep.length === 8) {
+      try {
+        const response = await axios.get(
+          `https://viacep.com.br/ws/${address.cep}/json`
+        );
+        setAddress({
+          ...address,
+          rua: `${response.data.logradouro}, ${response.data.bairro}, ${response.data.localidade}`,
+        });
+      } catch (error) {
+        console.error("Erro ao buscar o CEP", error);
+        setError(
+          "Erro ao buscar o CEP. Por favor, verifique o endereço e tente novamente."
+        );
+      }
+    }
+  };
+
   return (
     <main className="h-screen banner">
       <div className="max-w-screen-xl py-20 mx-auto px-6">
@@ -148,20 +172,44 @@ const Cart = () => {
               Adicione seu endereço
             </h2>
             <form className="mt-6">
-              <div className="flex flex-col space-y-4">
-                {["cep", "rua", "numero", "complemento"].map((field) => (
-                  <input
-                    key={field}
-                    className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                    type="text"
-                    name={field}
-                    placeholder={`${
-                      field.charAt(0).toUpperCase() + field.slice(1)
-                    }:`}
-                    value={address[field]}
-                    onChange={handleChange}
-                  />
-                ))}
+              <div className="flex flex-col space-y-3">
+                <input
+                  className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  type="text"
+                  name="cep"
+                  placeholder="cep:"
+                  id="cep"
+                  value={address.cep}
+                  onChange={handleChange}
+                />
+                <input
+                  className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  type="text"
+                  name="rua"
+                  placeholder="rua:"
+                  id="rua"
+                  value={address.rua}
+                  onFocus={findAddress}
+                  onChange={handleChange}
+                />
+                <input
+                  className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  type="text"
+                  name="numero"
+                  placeholder="numero:"
+                  id="numero"
+                  value={address.numero}
+                  onChange={handleChange}
+                />
+                <input
+                  className="w-full px-5 py-3 rounded-lg border border-gray-500 text-white bg-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  type="text"
+                  name="complemento"
+                  placeholder="complemento:"
+                  id="complemento"
+                  value={address.complemento}
+                  onChange={handleChange}
+                />
               </div>
             </form>
           </div>
