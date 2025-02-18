@@ -9,7 +9,7 @@ const AuthProvider = ({children}) => {
     const navigate = useNavigate();
     const [isLogged, setIsLogged] = useState(false)
     const [loading, setLoading] = useState(true)
-    const [userFull, setUserFull] = useState({})
+    const [userFull, setUserFull] = useState(null)
 
     useEffect(() => {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -28,8 +28,10 @@ const AuthProvider = ({children}) => {
       try {
         const response = await login(payload)
         localStorage.setItem('userInfo', JSON.stringify(response.data));
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
-        setIsLogged(true)
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        console.log(response.data.user, 'response.data.user');
+        setUserFull(response.data.user);
+        setIsLogged(true);
         navigate('/');
       } catch (error) {
         console.error('Error during login:', error.message);

@@ -16,8 +16,10 @@ const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   useEffect(() => {
-    findCart();
-  }, []);
+    if (isLogged) {
+      findCart();
+    }
+  }, [isLogged])
   
   const findCart = async () => {
     const storedCartId = localStorage.getItem("carrinhoId");
