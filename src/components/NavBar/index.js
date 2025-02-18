@@ -5,6 +5,7 @@ import { BsFillCartFill } from "react-icons/bs";
 import { SlLogout } from "react-icons/sl";
 import { HiMenu } from "react-icons/hi"; // Ícone de menu sanduíche
 import { findCartById } from "../../api/cartService";
+
 import avatar from "../../assets/avatar.png";
 
 const NavBar = () => {
@@ -12,12 +13,12 @@ const NavBar = () => {
   const { isLogged, logoutUser, userFull } = useContext(AuthContext);
   const [productsQuantityCart, setProductQuantityCart] = useState(0);
   const [cartId, setCartId] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Estado para menu mobile
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
   useEffect(() => {
     findCart();
   }, []);
-
+  
   const findCart = async () => {
     const storedCartId = localStorage.getItem("carrinhoId");
     setCartId(storedCartId);

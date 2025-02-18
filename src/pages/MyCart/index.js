@@ -136,6 +136,15 @@ const MyCart = () => {
               ))}
             </div>
           )}
+          {/* Valor Total */}
+          {cart.produtos.length > 0 && (
+            <div className="flex justify-between items-center mt-4 bg-gray-800 rounded-xl p-4">
+              <span className="text-lg text-gray-300">Total:</span>
+              <span className="text-2xl font-semibold text-white">
+                ${cart.precoTotal || 0}
+              </span>
+            </div>
+          )}
         </div>
         {/* Botão de continuar comprando */}
         <div className="mt-6 flex justify-center">

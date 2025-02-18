@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { AiOutlineMinusCircle, AiOutlinePlusCircle } from 'react-icons/ai';
 import { FiShoppingCart } from 'react-icons/fi';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -11,11 +11,27 @@ const ProductInfo = () => {
   const { userFull } = useContext(AuthContext);
   const { id } = useParams();
 
-  const frete = 5;
-  const product = useProduct(id);
+  const frete = 5; // Taxa de entrega
+  const product = useProduct(id); // Hook para pegar o produto com base no id
   const { addToCart } = useCart(userFull._id, frete);
 
   const [quantity, setQuantity] = useState(1);
+  const [totalPrice, setTotalPrice] = useState('0.00');
+  const [lastProductId, setLastProductId] = useState(id); // Para armazenar o último produto selecionado
+
+  // Atualiza o valor total sempre que o produto ou a quantidade mudar
+  useEffect(() => {
+    if (product && id !== lastProductId) {
+      // Atualiza o lastProductId quando o produto muda
+      setLastProductId(id);
+      setQuantity(1); // Reseta a quantidade ao mudar o produto
+    }
+    if (product) {
+      // Recalcula o total quando o produto for carregado
+      const calculatedTotal = (product.precoUnitario * quantity) + frete;
+      setTotalPrice(calculatedTotal.toFixed(2));
+    }
+  }, [product, quantity, id, lastProductId]); // Quando o produto ou a quantidade mudarem, recalcula o total
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -24,8 +40,6 @@ const ProductInfo = () => {
   };
 
   if (!product) return <div className="text-center text-lg font-semibold mt-10">Carregando...</div>;
-
-  const totalPrice = (product.precoUnitario * quantity).toFixed(2);
 
   return (
     <div className="max-w-screen-lg mx-auto px-6 my-16">
@@ -68,6 +82,23 @@ const ProductInfo = () => {
               <FiShoppingCart className="text-xl" />
               <span className="ml-2">Adicionar ao Carrinho</span>
             </button>
+          </div>
+
+          {/* Exibindo o valor total */}
+          <div className="mt-4">
+            <div className="text-xl font-semibold">Detalhes do Preço:</div>
+            <div className="flex justify-between text-lg mt-2">
+              <span>Produto: R$ {product.precoUnitario} x {quantity}</span>
+              <span>R$ {(product.precoUnitario * quantity).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-lg mt-2">
+              <span>Taxa de Entrega:</span>
+              <span>R$ {frete}</span>
+            </div>
+            <div className="flex justify-between text-lg mt-4 font-bold">
+              <span>Total + Taxa:</span>
+              <span>R$ {totalPrice}</span>
+            </div>
           </div>
         </div>
       </div>

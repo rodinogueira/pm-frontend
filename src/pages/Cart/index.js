@@ -4,7 +4,6 @@ import {
   AiOutlineMinusCircle,
   AiOutlinePlusCircle,
 } from "react-icons/ai";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import {
@@ -52,7 +51,12 @@ const Cart = () => {
         })
       );
 
-      setCart({ ...cartData, produtos: produtosComDetalhes });
+      // Recalcular o total com base nos produtos
+      const updatedTotal = produtosComDetalhes.reduce((total, product) => {
+        return total + product.precoUnitario * product.quantidade;
+      }, cartData.frete);
+
+      setCart({ ...cartData, produtos: produtosComDetalhes, precoTotal: updatedTotal });
     } catch (error) {
       setError("Erro ao buscar o carrinho. Por favor, tente novamente.");
     }
@@ -94,6 +98,8 @@ const Cart = () => {
   const remove = async (id) => {
     try {
       await removeProductFromCart(cart._id, id);
+
+      // Atualizar o carrinho novamente para obter os dados mais recentes
       fetchCart(cart._id);
     } catch (error) {
       setError("Erro ao remover o produto.");

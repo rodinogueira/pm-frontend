@@ -59,6 +59,7 @@ const AuthProvider = ({children}) => {
 
     const logoutUser = () => {
       setIsLogged(false);
+      setUserFull(null);
       localStorage.clear();
       navigate('/login')
     }
